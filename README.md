@@ -1,4 +1,4 @@
-# WeChat2MD: 微信公众号文章解析方案 (Cloud Proxy + OpenClaw Skill)
+# WeChat2MD: 小龙虾🦞 OpenClaw 微信公众号文章解析方案 (Cloud Proxy + OpenClaw Skill)
 
 这是一个专为 AI Agent（特别是 **小龙虾 OpenClaw**）设计的平衡方案，用于绕过微信公众号文章极其严苛的反爬机制。
 
