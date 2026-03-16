@@ -41,17 +41,17 @@ cd /opt/wechat2md
 
 然后在服务器上克隆代码：
 
-**选项 A：直接克隆（如果网络通畅）**
+**推荐：使用最稳定的代理（通常无需登录）**
 ```bash
-git clone https://github.com/raphaelxiao/wechat2md.git .
+git clone https://ghp.ci/https://github.com/raphaelxiao/wechat2md.git .
 ```
 
-**选项 B：使用 GitHub 代理（推荐，针对 GitHub 访问不稳定的情况）**
+**备选：如果上方失效，尝试此地址**
 ```bash
-git clone https://ghfast.top/https://github.com/raphaelxiao/wechat2md.git .
+git clone https://mirror.ghproxy.com/https://github.com/raphaelxiao/wechat2md.git .
 ```
 
-*(注意：末尾的 `.` 表示将内容直接克隆到当前目录。如果遇到 `GnuTLS` 或 `Connection timed out` 错误，请尝试选项 B)*
+*(注意：如果提示输入 Username，说明该代理当前被墙或连接质量差，被 Git 误认为需要认证。请尝试更换备选地址，或检查链接拼写是否完全一致。)*
 
 ## 4. 配置与启动
 
