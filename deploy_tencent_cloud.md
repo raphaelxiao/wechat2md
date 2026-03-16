@@ -31,13 +31,19 @@ apt-get update && apt-get install docker-compose-plugin -y
 
 ## 3. 部署代码
 
-在服务器上创建一个应用目录并进入：
+在服务器上创建一个应用目录并由当前用户管理（推荐）：
 ```bash
-mkdir -p /opt/wechat2md
+sudo mkdir -p /opt/wechat2md
+sudo chown $USER:$USER /opt/wechat2md
 cd /opt/wechat2md
 ```
+或者，你也可以选择在用户家目录下部署：`mkdir ~/wechat2md && cd ~/wechat2md`。
 
-你可以通过 Git 克隆你的仓库，或者使用 `scp` / `sftp` 将本地代码（`main.py`, `requirements.txt`, `Dockerfile`, `docker-compose.yml`）上传到服务器的 `/opt/wechat2md` 目录。
+然后克隆代码：
+```bash
+git clone https://github.com/raphaelxiao/wechat2md.git .
+```
+*(注意：末尾的 `.` 表示将内容直接克隆到当前目录，而不创建子文件夹)*
 
 ## 4. 配置与启动
 
