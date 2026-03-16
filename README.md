@@ -1,85 +1,89 @@
-# WeChat2MD: 微信公众号文章转 Markdown 工具及 Agent Skill
+# WeChat2MD: 微信公众号文章解析方案 (Cloud Proxy + OpenClaw Skill)
 
-这是一个完整的解决方案，包含：
-1. **API 服务端**：部署在云服务器（推荐腾讯云），用于绕过微信反爬并转换文章。
-2. **Agent Skill**：供 AI Agent（如 Antigravity, Claude 等）调用的技能插件。
+这是一个专为 AI Agent（特别是 **小龙虾 OpenClaw**）设计的平衡方案，用于绕过微信公众号文章极其严苛的反爬机制。
 
----
+## 核心架构
 
-## 第一部分：部署 API 服务端 (Tencent Cloud)
+由于微信文章在非腾讯云/特殊环境下通过常规爬虫读取极易触发反爬重定向（例如跳转到验证码或“只能在微信客户端查看”），本项目采用了 **“云端解析中转 + 本地 Agent 技能调用”** 的架构。
 
-由于微信文章有严格的反爬机制，建议部署在腾讯云服务器上以获得最稳定的解析效果。
-
-### 1. 准备环境
-- 确保服务器已安装 Docker 和 Docker Compose。
-- 在腾讯云控制台防火墙中开放 **8001** 端口（或其他你自定义的端口）。
-
-### 2. 快速部署
-在服务器上创建目录并生成文件：
-```bash
-mkdir -p /opt/wechat2md && cd /opt/wechat2md
-
-# 使用我们在项目中提供的“硬核”生成脚本（见 deploy_tencent_cloud.md）
-# 或者直接 git clone（如果服务器网络通畅）：
-git clone https://ghp.ci/https://github.com/raphaelxiao/wechat2md.git .
-```
-
-### 3. 配置与启动
-```bash
-# 生成安全 Token
-python3 -c "import secrets; import string; print(''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(32)))"
-
-# 写入配置文件
-echo "API_TOKEN=你的Token" > .env
-
-# 启动服务
-sudo docker compose up -d
+```mermaid
+graph LR
+    User[用户/Agent] -- 订阅文章URL --> Skill[Local OpenClaw Skill]
+    Skill -- 携带Token请求 --> Proxy[Tencent Cloud Proxy API]
+    Proxy -- 模拟正常访问获取HTML --> WeChat[微信文章服务器]
+    WeChat -- 返回HTML --> Proxy
+    Proxy -- 解析为Markdown --> Skill
+    Skill -- 返回高质量正文 --> User
 ```
 
 ---
 
-## 第二部分：配置 Agent Skill (wechat-article-fetcher)
+## 路线图：Step by Step 部署与使用
 
-部署好服务端后，你可以让你的 Agent “学会”读取微信文章。
+### 第一步：部署云端解析中转 (Cloud Proxy)
 
-### 1. 技能安装 (Step by Step)
+**为什么必须是腾讯云？** 微信文章在腾讯云 IDC 机房的出口 IP 下通常不会触发严苛的反爬，解析成功率接近 100%。
 
-1. **进入技能目录**：
-   找到 `wechat-article-fetcher/wechat-article-fetcher` 文件夹。
+1. **服务器准备**：
+   - 准备一台腾讯云服务器（轻量应用服务器即可），系统推荐 **Ubuntu 20.04+**。
+   - 在控制台防火墙中放通 **8001** 端口。
 
-2. **配置环境变量**：
-   将 `.env.example` 重命名为 `.env`。
+2. **一键环境配置**：
+   参照 [deploy_tencent_cloud.md](./deploy_tencent_cloud.md) 中的说明，配置 Docker 镜像加速器。
+
+3. **启动服务**：
    ```bash
-   cp .env.example .env
+   mkdir -p /opt/wechat2md && cd /opt/wechat2md
+   # 克隆代码 (建议使用 GitHub 代理加速)
+   git clone https://ghp.ci/https://github.com/raphaelxiao/wechat2md.git .
+   
+   # 生成随机 Token 并写入 .env
+   TOKEN=$(python3 -c "import secrets; import string; print(''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(32)))")
+   echo "API_TOKEN=$TOKEN" > .env
+   echo "生成的 Token 为: $TOKEN (请记录下来，下一步要用到)"
+
+   # 启动
+   sudo docker compose up -d
    ```
-   编辑 `.env` 文件，填入你的服务器信息：
+
+---
+
+## 第二步：在 小龙虾 OpenClaw 中安装技能 (Agent Skill)
+
+1. **放置技能文件夹**：
+   将项目中的 `wechat-article-fetcher/wechat-article-fetcher` 文件夹整体复制到你的 OpenClaw 的 `skills` 目录下。
+
+2. **配置认证信息**：
+   在技能目录中（`skills/wechat-article-fetcher/`），将 `.env.example` 复制为 `.env` 并编辑：
    ```ini
-   WECHAT2MD_TOKEN=你在第一部分生成的Token
-   WECHAT2MD_URL=http://<你的服务器公网IP>:8001/api/v1/wechat2md
+   # 填入第一步中生成的 Token
+   WECHAT2MD_TOKEN=你的Token
+   # 填入你服务器的公网 IP 和端口
+   WECHAT2MD_URL=http://你的服务器IP:8001/api/v1/wechat2md
    ```
 
-3. **让 Agent 加载技能**：
-   将该文件夹提供给 Agent（如在此对话中直接使用）。Agent 会自动识别 `SKILL.md` 并学会如何调用脚本。
-
-### 2. 使用方法
-
-你可以直接对 Agent 说：
-> “帮我读取一下这篇文章：https://mp.weixin.qq.com/s/xxxxxxxx”
-
-Agent 会自动：
-1. 识别出这是一个微信链接。
-2. 调用 `wechat_fetcher.py` 脚本请求你的云端 API。
-3. 获取解析后的 Markdown 内容并展示或处理。
+3. **激活技能**：
+   重启 OpenClaw 或在其 UI/控制台加载新技能。Agent 现在具备了 `wechat-article-fetcher` 能力。
 
 ---
 
-## 开发与调试
+## 第三步：使用方法
 
-- **本地测试 API**: `uvicorn main:app --reload`
-- **查看容器日志**: `sudo docker compose logs -f`
-- **手动测试脚本**: `python scripts/wechat_fetcher.py "URL"`
+你可以直接在 OpenClaw 中发送：
+> “这篇文章讲了什么：https://mp.weixin.qq.com/s/xxxxxxxx”
+
+**Agent 会自动执行以下逻辑：**
+1. 识别出链接符合微信特征。
+2. 触发 `wechat-article-fetcher` 技能。
+3. 调用本地 `scripts/wechat_fetcher.py` 脚本发送请求。
+4. 获得精准的 Markdown 内容并进行分析总结。
 
 ---
+
+## 项目结构
+- `/`：云端服务端代码 (FastAPI + Docker)。
+- `/wechat-article-fetcher/`：专为 OpenClaw 准备的技能插件包。
+- `deploy_tencent_cloud.md`：腾讯云环境下的特殊配置说明（包含各种国内网络问题解决方案）。
 
 ## 许可证
 MIT

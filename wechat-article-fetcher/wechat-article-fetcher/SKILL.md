@@ -1,19 +1,22 @@
 ---
 name: wechat-article-fetcher
-description: Fetch WeChat public account articles and convert to Markdown using a cloud API. Use when the user wants to extract content from WeChat articles (mp.weixin.qq.com URLs) for reading, archiving, or processing. The skill handles anti-scraping by calling a cloud-based conversion service.
+description: 微信公众号文章解析技能 (OpenClaw)。通过调运腾讯云解析代理绕过微信反爬，将文章 URL 转换为 Markdown 高质量文本。适用于内容抓取、信息总结及知识库沉淀。
 ---
 
-# WeChat Article Fetcher
+# WeChat Article Fetcher (OpenClaw Skill)
 
-Fetch WeChat public account articles and convert them to Markdown format.
+通过调运远程的云端解析服务，稳定获取微信公众号文章内容并转换为 Markdown。
 
-## Prerequisites
+## 前置条件
 
-1. Copy `.env.example` to `.env` in the skill directory
-2. Set your API token in `.env`:
-   ```
-   WECHAT2MD_TOKEN=your_actual_token_here
-   ```
+1. **部署云端代理**：确保你已按照项目根目录的 [README.md](../../README.md) 在腾讯云完成 Cloud Proxy 的部署。
+2. **配置环境**：
+   - 将技能目录下的 `.env.example` 复制并重命名为 `.env`。
+   - 在 `.env` 中设置你的 API Token 和服务器地址：
+     ```ini
+     WECHAT2MD_TOKEN=你在服务端设置的Token
+     WECHAT2MD_URL=http://<服务器IP>:8001/api/v1/wechat2md
+     ```
 
 ## Usage
 
