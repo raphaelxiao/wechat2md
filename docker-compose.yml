@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  wechat2md:
+    build: .
+    container_name: wechat2md_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - API_TOKEN=${API_TOKEN:-your_secure_random_token_here}
