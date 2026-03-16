@@ -117,7 +117,6 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 EOF
 
 cat << 'EOF' > docker-compose.yml
-version: '3.8'
 services:
   wechat2md:
     build: .
@@ -148,16 +147,15 @@ echo "API_TOKEN=这里替换成你生成的强大的Token" > .env
 确认文件都在目录下后，使用 Docker Compose 构建并启动服务：
 
 ```bash
-docker compose up -d
+sudo docker compose up -d
 ```
-或者如果是老版本：
-```bash
-docker-compose up -d
-```
+*备注：如果遇到 `permission denied` 错误，说明需要管理员权限，请务必加 `sudo`。*
+
+*(可选) 如果不想每次都加 sudo，可以运行 `sudo usermod -aG docker $USER` 然后退出并重新登录服务器。*
 
 等待构建和启动完成。你可以通过以下命令查看日志：
 ```bash
-docker compose logs -f
+sudo docker compose logs -f
 ```
 
 ## 5. 测试 API
