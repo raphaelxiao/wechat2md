@@ -39,11 +39,19 @@ cd /opt/wechat2md
 ```
 或者，你也可以选择在用户家目录下部署：`mkdir ~/wechat2md && cd ~/wechat2md`。
 
-然后克隆代码：
+然后在服务器上克隆代码：
+
+**选项 A：直接克隆（如果网络通畅）**
 ```bash
 git clone https://github.com/raphaelxiao/wechat2md.git .
 ```
-*(注意：末尾的 `.` 表示将内容直接克隆到当前目录，而不创建子文件夹)*
+
+**选项 B：使用 GitHub 代理（推荐，针对 GitHub 访问不稳定的情况）**
+```bash
+git clone https://ghfast.top/https://github.com/raphaelxiao/wechat2md.git .
+```
+
+*(注意：末尾的 `.` 表示将内容直接克隆到当前目录。如果遇到 `GnuTLS` 或 `Connection timed out` 错误，请尝试选项 B)*
 
 ## 4. 配置与启动
 
