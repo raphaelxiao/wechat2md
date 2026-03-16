@@ -39,19 +39,96 @@ cd /opt/wechat2md
 ```
 或者，你也可以选择在用户家目录下部署：`mkdir ~/wechat2md && cd ~/wechat2md`。
 
-然后在服务器上克隆代码：
+然后在服务器上克隆或创建代码：
 
-**推荐：使用最稳定的代理（通常无需登录）**
+**选项 A：使用 GitHub 代理（最快）**
 ```bash
 git clone https://ghp.ci/https://github.com/raphaelxiao/wechat2md.git .
 ```
 
-**备选：如果上方失效，尝试此地址**
-```bash
-git clone https://mirror.ghproxy.com/https://github.com/raphaelxiao/wechat2md.git .
-```
+**选项 B：无网络/备选方案（最可靠 - 直接在服务器生成文件）**
+如果 Git 克隆一直失败，请直接在服务器终端**一次性复制并运行**以下命令。它会自动创建所有必要文件：
 
-*(注意：如果提示输入 Username，说明该代理当前被墙或连接质量差，被 Git 误认为需要认证。请尝试更换备选地址，或检查链接拼写是否完全一致。)*
+```bash
+cat << 'EOF' > main.py
+from fastapi import FastAPI, Depends, HTTPException, Header
+from pydantic import BaseModel
+import requests
+from bs4 import BeautifulSoup
+from markdownify import markdownify as md
+import os
+
+app = FastAPI(title="WeChat to Markdown API")
+API_TOKEN = os.getenv("API_TOKEN", "default_secret_token")
+
+class ArticleRequest(BaseModel):
+    url: str
+
+def verify_token(authorization: str = Header(None)):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authorization header missing")
+    try:
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer" or token != API_TOKEN:
+            raise HTTPException(status_code=403, detail="Invalid token")
+    except:
+        raise HTTPException(status_code=401, detail="Invalid authorization header format")
+    return token
+
+@app.post("/api/v1/wechat2md", dependencies=[Depends(verify_token)])
+def convert_wechat_to_markdown(request: ArticleRequest):
+    headers = {"User-Agent": "Mozilla/5.0"}
+    try:
+        response = requests.get(request.url, headers=headers, timeout=10)
+        response.raise_for_status()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+    soup = BeautifulSoup(response.text, "html.parser")
+    title = soup.find("h1", class_="rich_media_title").get_text(strip=True) if soup.find("h1", class_="rich_media_title") else "Untitled"
+    content_tag = soup.find("div", id="js_content")
+    if not content_tag:
+        raise HTTPException(status_code=404, detail="Content not found")
+    
+    for img in content_tag.find_all("img"):
+        if img.has_attr("data-src"): img["src"] = img["data-src"]
+    
+    markdown_text = md(str(content_tag), heading_style="ATX", strip=['script', 'style'])
+    return {"title": title, "markdown_content": f"# {title}\n\n{markdown_text}"}
+EOF
+
+cat << 'EOF' > requirements.txt
+fastapi
+uvicorn[standard]
+requests
+beautifulsoup4
+markdownify
+pydantic
+EOF
+
+cat << 'EOF' > Dockerfile
+FROM python:3.10-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+COPY . .
+EXPOSE 8000
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+EOF
+
+cat << 'EOF' > docker-compose.yml
+version: '3.8'
+services:
+  wechat2md:
+    build: .
+    container_name: wechat2md_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - API_TOKEN=${API_TOKEN:-your_secure_random_token_here}
+EOF
+```
 
 ## 4. 配置与启动
 
