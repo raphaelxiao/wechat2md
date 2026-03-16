@@ -29,6 +29,25 @@ sudo systemctl enable docker
 sudo apt-get update && sudo apt-get install docker-compose-plugin -y
 ```
 
+### (重要) 解决 Docker 拉取镜像慢/超时的问题
+由于网络环境原因，直接从 Docker Hub 拉取镜像可能会超时。建议配置腾讯云或国内镜像加速器：
+
+```bash
+sudo mkdir -p /etc/docker
+sudo tee /etc/docker/daemon.json <<-'EOF'
+{
+  "registry-mirrors": [
+    "https://mirror.ccs.tencentyun.com",
+    "https://hub-mirror.c.163.com",
+    "https://docker.m.daocloud.io"
+  ]
+}
+EOF
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+```
+*备注：`mirror.ccs.tencentyun.com` 是腾讯云内网镜像源，速度最快且最稳定。*
+
 ## 3. 部署代码
 
 在服务器上创建一个应用目录并由当前用户管理（推荐）：
