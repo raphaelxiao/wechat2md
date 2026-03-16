@@ -132,9 +132,16 @@ EOF
 
 ## 4. 配置与启动
 
-在 `/opt/wechat2md` 目录下，创建一个 `.env` 文件来存储你的安全密钥（可选，也可以直接修改 `docker-compose.yml`）。
+在 `/opt/wechat2md` 目录下，创建一个 `.env` 文件来存储你的安全密钥。
+
+你可以运行以下命令生成一个随机的安全 Token（如果你已经在本地克隆了代码）：
 ```bash
-echo "API_TOKEN=这里替换成你自定义的强大的Token" > .env
+python3 generate_token.py
+```
+
+或者直接手动创建一个强密码并写入 `.env`：
+```bash
+echo "API_TOKEN=这里替换成你生成的强大的Token" > .env
 ```
 *备注：使用 `.env` 是为了不把 Token 直接写在 docker-compose 文件中。*
 
