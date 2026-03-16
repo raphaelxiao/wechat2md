@@ -20,13 +20,13 @@ curl -fsSL https://get.docker.com | bash -s docker --mirror Aliyun
 ```
 安装完成后，启动 Docker：
 ```bash
-systemctl start docker
-systemctl enable docker
+sudo systemctl start docker
+sudo systemctl enable docker
 ```
 
 安装 Docker Compose 插件（较新版本的 Docker CE 已经自带 `docker compose` 命令，如果没有，可按照官方文档安装，或者使用以下简单命令）：
 ```bash
-apt-get update && apt-get install docker-compose-plugin -y
+sudo apt-get update && sudo apt-get install docker-compose-plugin -y
 ```
 
 ## 3. 部署代码
