@@ -4,6 +4,8 @@ import requests
 from bs4 import BeautifulSoup
 from markdownify import markdownify as md
 import os
+import time
+from urllib.parse import urlparse
 
 app = FastAPI(title="WeChat to Markdown API")
 
@@ -31,16 +33,28 @@ def convert_wechat_to_markdown(request: ArticleRequest):
     url = request.url
     if not url.startswith("http"):
         raise HTTPException(status_code=400, detail="Invalid URL format")
+    # Only fetch WeChat articles: otherwise this endpoint is an open proxy into the host's network
+    if urlparse(url).hostname != "mp.weixin.qq.com":
+        raise HTTPException(status_code=400, detail="Only mp.weixin.qq.com URLs are supported")
 
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
     }
 
-    try:
-        response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status()
-    except requests.RequestException as e:
-        raise HTTPException(status_code=500, detail=f"Failed to fetch the article: {str(e)}")
+    # WeChat occasionally answers with a verification page under bursts; it clears after a few seconds
+    for attempt in range(2):
+        try:
+            response = requests.get(url, headers=headers, timeout=10)
+            response.raise_for_status()
+        except requests.RequestException as e:
+            raise HTTPException(status_code=500, detail=f"Failed to fetch the article: {str(e)}")
+        blocked = "secitptpage/verify" in response.url or "环境异常" in response.text
+        if not blocked:
+            break
+        if attempt == 0:
+            time.sleep(4)
+    else:
+        raise HTTPException(status_code=503, detail="WeChat returned a verification page; try again later")
 
     html_content = response.text
     soup = BeautifulSoup(html_content, "html.parser")

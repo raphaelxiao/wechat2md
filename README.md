@@ -46,6 +46,23 @@ graph LR
    sudo docker compose up -d
    ```
 
+### 现在的线上部署（2026-10-24，腾讯云新加坡，和 LLM Bridge 同机）
+
+2026-10-23 实测：新加坡机房出口照样抓得到（3 秒一篇 13/13；0.5 秒一篇 26 次里撞上 1 次验证页，下一次就好了），
+所以没走 Docker，直接跟 bridge 放在一起：
+
+| 项 | 值 |
+|---|---|
+| 代码 | `/opt/wechat2md`（`main.py` + `requirements.txt`，venv 在 `venv/`），归 `ubuntu` 用户 |
+| 进程 | systemd `wechat2md`，只听 `127.0.0.1:8001`，`MemoryMax=200M` |
+| 对外 | nginx 的 `hleesay.uk` 443 站点里 `location /wechat2md/` → `https://hleesay.uk/wechat2md/api/v1/wechat2md` |
+| Token | `/opt/wechat2md/.env` 的 `API_TOKEN`（600） |
+
+更新代码：把 `main.py` 拷过去再 `sudo systemctl restart wechat2md`。
+
+`main.py` 两条行为：**只收 `mp.weixin.qq.com`**（否则这个接口就是一个能打进本机内网的代理，同机有 bridge）；
+撞上微信验证页（`secitptpage/verify` / 「环境异常」）**等 4 秒重试一次**，还不行回 503。
+
 ---
 
 ## 第二步：在 小龙虾 OpenClaw 中安装技能 (Agent Skill)
